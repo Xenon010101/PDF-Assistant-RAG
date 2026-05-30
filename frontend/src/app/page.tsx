@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import ContributorsPanel from "@/components/layout/ContributorsPanel";
 import OpenSourceBadge from "@/components/layout/OpenSourceBadge";
+import Footer from "@/components/layout/Footer";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -128,9 +129,7 @@ export default function HomePage() {
       </div>
 
       {/* ── Footer ──────────────────────────────────── */}
-      <footer className="text-center py-6 text-xs text-muted-foreground border-t border-border/50">
-        Built with FastAPI • LangChain • ChromaDB • HuggingFace • Next.js
-      </footer>
+      <Footer onOpenHallOfFame={() => setHallOfFameOpen(true)} />
 
       {/* Hall of Fame Modal */}
       {hallOfFameOpen && (
