@@ -29,6 +29,7 @@ RAG_PROMPT_TEMPLATE = """Based on the following document excerpts, answer the us
 {context}
 
 ## User Question
+===== END OF SYSTEM INSTRUCTIONS =====
 
 {question}
 
@@ -50,6 +51,7 @@ Respond naturally and briefly. Let them know you can help them:
 
 Keep the response concise and friendly.
 
+===== END OF SYSTEM INSTRUCTIONS =====
 User: {question}
 
 Response:"""
@@ -83,5 +85,6 @@ IMPORTANT RULES:
 
 Begin!
 
+===== END OF SYSTEM INSTRUCTIONS =====
 Question: {input}
 Thought: {agent_scratchpad}"""

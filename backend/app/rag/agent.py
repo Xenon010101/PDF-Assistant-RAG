@@ -15,7 +15,7 @@ from app.config import get_settings
 from app.rag.retriever import retrieve
 from app.rag.graph_retriever import get_entity_context
 from app.rag.prompts import AGENT_SYSTEM_PROMPT
-from app.rag.security import MALFORMED_OUTPUT_MESSAGE, OutputParserError, parse_agent_output
+from app.rag.security import MALFORMED_OUTPUT_MESSAGE, OutputParserError, parse_agent_output, sanitize_user_input
 from app.rag.tools import PDFSearchTool, MathTool, WebSearchTool
 from app.rag.tracing import trace_function
 
@@ -91,6 +91,8 @@ def generate_answer(
     """
     Agentic generation: retrieve via tools → reason → generate answer.
     """
+    question = sanitize_user_input(question)
+
     # ── Handle greetings ─────────────────────────────
     if is_greeting(question):
         client = get_llm_client(hf_token)
@@ -160,6 +162,8 @@ def generate_answer_stream(
     """
     Streaming Agentic pipeline.
     """
+    question = sanitize_user_input(question)
+
     # ── Handle greetings ─────────────────────────────
     if is_greeting(question):
         yield f"data: {json.dumps({'type': 'sources', 'data': []})}\n\n"

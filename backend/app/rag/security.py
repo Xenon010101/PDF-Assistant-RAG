@@ -34,6 +34,23 @@ MALFORMED_OUTPUT_MESSAGE = (
     "I could not safely parse the model response. Please try rephrasing your question."
 )
 
+MAX_INPUT_LENGTH = 4000
+
+JAILBREAK_PATTERNS = [
+    r"\bignore\s+(all\s+)?(previous|prior|above)\s+(instructions?|rules?|prompts?|directions?|context)\b",
+    r"\bdisregard\s+(all\s+)?(previous|prior|above)\s+(instructions?|rules?|prompts?|directions?|context)\b",
+    r"\bforget\s+(all\s+)?(previous|prior|above)\s+(instructions?|rules?|prompts?|directions?|context)\b",
+    r"\bdan\b",
+    r"\byou\s+(are\s+)?(free|released|unleashed)\b",
+    r"\bnew\s+(rules?|instructions?|prompts?)\s*:",
+]
+
+_COMPILED_JAILBREAK = [
+    re.compile(p, flags=re.IGNORECASE) for p in JAILBREAK_PATTERNS
+]
+
+USER_INPUT_DELIMITER = "\n\n===== END OF SYSTEM INSTRUCTIONS =====\n\n"
+
 
 @dataclass(frozen=True)
 class InputClassification:
@@ -69,6 +86,15 @@ def validate_user_input(text: str) -> None:
     classification = classify_user_input(text)
     if not classification.is_safe:
         raise UnsafePromptError(BLOCKED_INPUT_MESSAGE)
+
+
+def sanitize_user_input(text: str) -> str:
+    if not text:
+        return ""
+    for pattern in _COMPILED_JAILBREAK:
+        text = pattern.sub("", text)
+    text = " ".join(text.split())
+    return text[:MAX_INPUT_LENGTH]
 
 
 def parse_agent_output(raw_output: str) -> str:
