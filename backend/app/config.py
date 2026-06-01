@@ -86,6 +86,9 @@ class Settings(BaseSettings):
     LANGSMITH_ENDPOINT: str = "https://api.smith.langchain.com"
     LANGSMITH_PROJECT: str = "pdf-assistant-rag"
 
+    # ── Multi-Query Expansion ────────────────────────────
+    MULTI_QUERY_ENABLED: bool = True
+
     # ── Reranker ─────────────────────────────────────────
     RERANKER_MODEL: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     # ── Vision / Image captioning ─────────────────────

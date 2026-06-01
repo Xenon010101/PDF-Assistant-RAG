@@ -1,5 +1,6 @@
 """
 Two-stage retrieval: Hybrid Ensemble (ChromaDB + BM25) + cross-encoder reranking.
+Multi-Query Expansion with BM25 is available as an alternative first stage.
 """
 import json
 import logging
@@ -31,6 +32,7 @@ from app.config import get_settings
 from app.rag.embeddings import embed_query
 from app.rag.tracing import trace_function
 from app.rag.vectorstore import query_chunks
+from app.rag.multi_query import multi_query_retrieve
 
 logger = logging.getLogger(__name__)
 settings = get_settings()
