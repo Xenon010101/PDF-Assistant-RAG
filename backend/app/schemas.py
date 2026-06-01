@@ -11,7 +11,7 @@ from datetime import datetime
 class UserRegister(BaseModel):
     username: str = Field(..., min_length=3, max_length=80)
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=6, max_length=128)
 
 
 class UserLogin(BaseModel):
