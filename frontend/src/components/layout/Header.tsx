@@ -67,6 +67,14 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
     }
   };
 
+  const getInitials = (username: string) => {
+    const parts = username.trim().split(/\s+/);
+    if (parts.length >= 2) {
+      return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+    }
+    return username.slice(0, 2).toUpperCase();
+  };
+
   return (
     <header className="h-14 flex items-center justify-between px-4 border-b border-border/50 bg-card/50 backdrop-blur-md flex-shrink-0 z-50">
       {/* Left */}
@@ -113,7 +121,7 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
               <button className="flex items-center h-8 gap-2 px-2 rounded-md hover:bg-accent transition-colors cursor-pointer">
                 <Avatar className="w-6 h-6">
                   <AvatarFallback className="text-[10px] bg-primary/20 text-primary">
-                    {user?.username?.slice(0, 2).toUpperCase() || "U"}
+                    {user?.username ? getInitials(user.username) : "U"}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm hidden sm:inline">{user?.username}</span>
