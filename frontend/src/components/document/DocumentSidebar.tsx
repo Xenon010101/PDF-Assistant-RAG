@@ -13,6 +13,14 @@ import {
 } from "lucide-react";
 import { useDropzone } from "react-dropzone";
 
+const MAX_FILE_SIZE = 50 * 1024 * 1024;
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "text/plain",
+  "text/markdown",
+];
+
 interface Props {
   documents: DocInfo[];
   activeDoc: DocInfo | null;
@@ -25,10 +33,44 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [uploadError, setUploadError] = useState("");
+  const [validationError, setValidationError] = useState("");
   const [deleting, setDeleting] = useState<string | null>(null);
 
+  const validateFiles = useCallback(
+    (files: File[]): string | null => {
+      for (const file of files) {
+        if (file.size > MAX_FILE_SIZE) {
+          return t("documents.fileTooLarge");
+        }
+        if (!ALLOWED_TYPES.includes(file.type)) {
+          return t("documents.fileTypeInvalid");
+        }
+      }
+      return null;
+    },
+    [t]
+  );
+
   const onDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    (acceptedFiles: File[], rejectedFiles: { file: File; errors: { code: string; message: string }[] }[]) => {
+      setValidationError("");
+
+      if (rejectedFiles.length > 0) {
+        const rejection = rejectedFiles[0];
+        if (rejection.errors.some((e) => e.code === "file-too-large")) {
+          setValidationError(t("documents.fileTooLarge"));
+        } else {
+          setValidationError(t("documents.fileTypeInvalid"));
+        }
+        return;
+      }
+
+      const error = validateFiles(acceptedFiles);
+      if (error) {
+        setValidationError(error);
+        return;
+      }
+
       if (acceptedFiles.length === 0) return;
 
       void (async () => {
@@ -53,7 +95,7 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
         }
       })();
     },
-    [onDocumentsChange, t]
+    [onDocumentsChange, t, validateFiles]
   );
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -64,6 +106,7 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
       "text/plain": [".txt"],
       "text/markdown": [".md"],
     },
+    maxSize: MAX_FILE_SIZE,
     disabled: uploading,
   });
 
@@ -106,15 +149,18 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
     <div className="h-full flex flex-col bg-sidebar">
       {/* ── Upload Zone ─────────────────────────────── */}
       <div className="p-3 border-b border-sidebar-border space-y-2">
-        {uploadError && (
-          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive">
-            {uploadError}
+        {(uploadError || validationError) && (
+          <div className="p-3 rounded-lg bg-destructive/10 border border-destructive/30 text-sm text-destructive animate-in fade-in slide-in-from-top-1 duration-200">
+            {validationError || uploadError}
           </div>
         )}
         <div
           {...getRootProps()}
-          className={`relative rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-all duration-200
-            ${isDragActive ? "border-primary bg-primary/10 scale-[1.02]" : "border-sidebar-border hover:border-primary/40 hover:bg-sidebar-accent/50"}
+          className={`relative rounded-lg border-2 border-dashed p-4 text-center cursor-pointer transition-all duration-300 ease-out
+            ${isDragActive
+              ? "border-primary bg-primary/10 scale-[1.03] shadow-lg shadow-primary/10"
+              : "border-sidebar-border hover:border-primary/50 hover:bg-sidebar-accent/50 hover:scale-[1.01] hover:shadow-sm"
+            }
             ${uploading ? "pointer-events-none opacity-60" : ""}`}
         >
           <input {...getInputProps()} />
@@ -126,7 +172,7 @@ export default function DocumentSidebar({ documents = [], activeDoc, onSelectDoc
             </div>
           ) : (
             <>
-              <Upload className="w-5 h-5 mx-auto text-muted-foreground mb-2" />
+              <Upload className={`w-5 h-5 mx-auto mb-2 transition-all duration-300 ${isDragActive ? "text-primary scale-110" : "text-muted-foreground"}`} />
               <p className="text-xs text-muted-foreground">
                 {isDragActive ? t("documents.dropHere") : t("documents.dropOrClick")}
               </p>
