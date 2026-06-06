@@ -9,6 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import MessageBubble from "./MessageBubble";
 import SourceCard from "./SourceCard";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Send, Loader2, Trash2, MessageSquare, Download } from "lucide-react";
 
 interface Props {
@@ -305,33 +310,43 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
             rows={1}
           />
           <div className="flex gap-1.5 shrink-0">
-            <Button
-              id="send-btn"
-              size="icon"
-              onClick={handleSend}
-              disabled={!input.trim() || streaming}
-              className="h-[44px] w-[44px]"
-            >
-              {streaming ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Send className="w-4 h-4" />
-              )}
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  id="send-btn"
+                  size="icon"
+                  onClick={handleSend}
+                  disabled={!input.trim() || streaming}
+                  className="h-[44px] w-[44px]"
+                >
+                  {streaming ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">{t("chat.sendMessage")}</TooltipContent>
+            </Tooltip>
             {messages.length > 0 && (
               <>
                 {/* Export dropdown */}
                 <div className="relative" ref={exportMenuRef}>
-                  <Button
-                    id="export-chat-btn"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setShowExportMenu((v) => !v)}
-                    className="h-[44px] w-[44px] text-muted-foreground hover:text-primary"
-                    title={t("chat.exportTitle")}
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        id="export-chat-btn"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setShowExportMenu((v) => !v)}
+                        className="h-[44px] w-[44px] text-muted-foreground hover:text-primary"
+                        title={t("chat.exportTitle")}
+                      >
+                        <Download className="w-4 h-4" />
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{t("chat.exportTitle")}</TooltipContent>
+                  </Tooltip>
                   {showExportMenu && (
                     <div className="absolute bottom-full mb-2 right-0 min-w-[160px] rounded-lg border border-border bg-popover p-1 shadow-lg animate-in fade-in slide-in-from-bottom-2 z-50">
                       <button
@@ -362,14 +377,19 @@ export default function ChatPanel({ activeDoc, onCitationClick }: Props) {
                   )}
                 </div>
                 {/* Clear history */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={handleClear}
-                  className="h-[44px] w-[44px] text-muted-foreground hover:text-destructive"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleClear}
+                      className="h-[44px] w-[44px] text-muted-foreground hover:text-destructive"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{t("chat.clearChat")}</TooltipContent>
+                </Tooltip>
               </>
             )}
           </div>
