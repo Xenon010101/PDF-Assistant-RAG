@@ -396,6 +396,10 @@ def update_password(payload:UpdatePassword,
         saving. Any `SQLAlchemyError` triggers a rollback and raises a 400
         response.
     """
+    if not payload.old_password:
+        raise HTTPException(status_code=400, detail="Old password is required")
+    if not verify_password(payload.old_password, user.hashed_password):
+        raise HTTPException(status_code=400, detail="Old password is incorrect")
     if not payload.password and not payload.confirm_password:
         raise HTTPException(status_code=400, detail="Password and confirm_password are required")
     if len(payload.password) == 0 and len(payload.confirm_password) == 0:

@@ -33,6 +33,7 @@ class UserUpdateResponse(BaseModel):
     email: EmailStr
 
 class UpdatePassword(BaseModel):
+    old_password: str
     password: str
     confirm_password: str
 

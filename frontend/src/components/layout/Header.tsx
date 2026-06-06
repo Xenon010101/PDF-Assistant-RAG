@@ -1,10 +1,12 @@
 "use client";
 
+import { useState, useSyncExternalStore } from "react";
 import { useAuth } from "@/lib/auth";
 import { useTranslation } from "react-i18next";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +14,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import {
   Brain,
   PanelLeftClose,
@@ -22,8 +31,11 @@ import {
   Moon,
   Shield,
   Sun,
+  KeyRound,
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
-import { useSyncExternalStore } from "react";
 import { useTheme } from "next-themes";
 import ApiKeyManager from "@/components/auth/ApiKeyManager";
 
@@ -44,7 +56,13 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
   const { t, i18n } = useTranslation();
   const router = useRouter();
   const { theme, setTheme } = useTheme();
-  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot); // ← replaces useState + useEffect
+  const mounted = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+  const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordUpdating, setPasswordUpdating] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const isDark = theme === "dark";
   const toggleTheme = () => setTheme(isDark ? "light" : "dark");
@@ -67,8 +85,110 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
     }
   };
 
+  const handlePasswordChange = async () => {
+    setPasswordStatus(null);
+    if (!currentPassword) {
+      setPasswordStatus({ type: "error", message: t("settings.oldPasswordIncorrect") });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordStatus({ type: "error", message: t("settings.passwordsDoNotMatch") });
+      return;
+    }
+    setPasswordUpdating(true);
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/v1/auth/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+        body: JSON.stringify({
+          old_password: currentPassword,
+          password: newPassword,
+          confirm_password: confirmPassword,
+        }),
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const detail = (errorData as { detail?: string }).detail || t("settings.passwordUpdateFailed");
+        if (detail.toLowerCase().includes("old password") || detail.toLowerCase().includes("current password")) {
+          setPasswordStatus({ type: "error", message: t("settings.oldPasswordIncorrect") });
+        } else {
+          setPasswordStatus({ type: "error", message: detail });
+        }
+        return;
+      }
+      setPasswordStatus({ type: "success", message: t("settings.passwordUpdated") });
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch {
+      setPasswordStatus({ type: "error", message: t("settings.passwordUpdateFailed") });
+    } finally {
+      setPasswordUpdating(false);
+    }
+  };
+
   return (
-    <header className="h-14 flex items-center justify-between px-4 border-b border-border/50 bg-card/50 backdrop-blur-md flex-shrink-0 z-50">
+    <>
+      <Dialog open={passwordDialogOpen} onOpenChange={(open) => { setPasswordDialogOpen(open); if (!open) { setPasswordStatus(null); setCurrentPassword(""); setNewPassword(""); setConfirmPassword(""); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>{t("settings.changePassword")}</DialogTitle>
+            <DialogDescription>{t("settings.currentPassword")}</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {passwordStatus && (
+              <div className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
+                passwordStatus.type === "success"
+                  ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/30"
+                  : "bg-destructive/10 text-destructive border border-destructive/30"
+              }`}>
+                {passwordStatus.type === "success" ? <CheckCircle2 className="w-4 h-4 shrink-0" /> : <AlertCircle className="w-4 h-4 shrink-0" />}
+                {passwordStatus.message}
+              </div>
+            )}
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("settings.currentPassword")}</p>
+              <Input
+                id="current-password"
+                type="password"
+                value={currentPassword}
+                onChange={(e) => setCurrentPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("settings.newPassword")}</p>
+              <Input
+                id="new-password"
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium">{t("settings.confirmNewPassword")}</p>
+              <Input
+                id="confirm-password"
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+            </div>
+            <Button
+              className="w-full"
+              onClick={handlePasswordChange}
+              disabled={passwordUpdating}
+            >
+              {passwordUpdating && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+              {t("settings.changePassword")}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      <header className="h-14 flex items-center justify-between px-4 border-b border-border/50 bg-card/50 backdrop-blur-md flex-shrink-0 z-50">
       {/* Left */}
       <div className="flex items-center gap-3">
         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onToggleSidebar} title={sidebarOpen ? t("header.closeSidebar") : t("header.openSidebar")}>
@@ -127,6 +247,11 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
             <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer" onClick={() => setPasswordDialogOpen(true)}>
+              <KeyRound className="w-4 h-4 mr-2" />
+              {t("settings.changePassword")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             {user?.is_admin && (
               <DropdownMenuItem className="cursor-pointer" onClick={() => router.push("/admin")}>
                 <Shield className="w-4 h-4 mr-2" />
@@ -142,5 +267,6 @@ export default function Header({ sidebarOpen, onToggleSidebar, viewerOpen, onTog
         </DropdownMenu>
       </div>
     </header>
+    </>
   );
 }
