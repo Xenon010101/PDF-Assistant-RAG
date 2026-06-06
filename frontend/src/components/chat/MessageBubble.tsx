@@ -4,10 +4,16 @@ import { useState, useRef } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import rehypeHighlight from "rehype-highlight";
 import remarkGfm from "remark-gfm";
+import { useTranslation } from "react-i18next";
 import type { ChatMsg } from "@/store/chat-store";
 import { api } from "@/lib/api";
 import { Brain, User, Copy, Check, Share2, Link2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   message: ChatMsg;
@@ -95,6 +101,15 @@ export default function MessageBubble({ message }: Props) {
     }
   };
 
+  const copyTooltipLabel = copied ? t("chat.copied") : t("chat.copyResponse");
+  const shareTooltipLabel = shared
+    ? t("chat.linkCopied")
+    : shareFailed
+      ? t("chat.shareFailed")
+      : t("chat.shareResponse");
+
+  const { t } = useTranslation();
+
   return (
     <div
       className={`flex gap-3 py-3 animate-fade-in-up ${isUser ? "justify-end" : "justify-start"}`}
@@ -119,45 +134,55 @@ export default function MessageBubble({ message }: Props) {
             {message.content && (
               <>
                 {!message.isStreaming && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon-xs"
-                    className={`absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-opacity ${
-                      shared || shareFailed
-                        ? "opacity-100"
-                        : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-                    }`}
-                    onClick={handleShare}
-                    aria-label={shared ? "Link copied" : shareFailed ? "Share failed" : "Share response"}
-                  >
-                    {shared ? (
-                      <Link2 className="w-3.5 h-3.5 text-emerald-400" />
-                    ) : shareFailed ? (
-                      <X className="w-3.5 h-3.5 text-destructive" />
-                    ) : (
-                      <Share2 className="w-3.5 h-3.5" />
-                    )}
-                  </Button>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon-xs"
+                        className={`absolute top-2 right-2 text-muted-foreground hover:text-foreground transition-opacity ${
+                          shared || shareFailed
+                            ? "opacity-100"
+                            : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                        }`}
+                        onClick={handleShare}
+                        aria-label={shared ? "Link copied" : shareFailed ? "Share failed" : "Share response"}
+                      >
+                        {shared ? (
+                          <Link2 className="w-3.5 h-3.5 text-emerald-400" />
+                        ) : shareFailed ? (
+                          <X className="w-3.5 h-3.5 text-destructive" />
+                        ) : (
+                          <Share2 className="w-3.5 h-3.5" />
+                        )}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">{shareTooltipLabel}</TooltipContent>
+                  </Tooltip>
                 )}
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon-xs"
-                  className={`absolute top-2 right-9 text-muted-foreground hover:text-foreground transition-opacity ${
-                    copied
-                      ? "opacity-100"
-                      : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
-                  }`}
-                  onClick={handleCopy}
-                  aria-label={copied ? "Copied" : "Copy response"}
-                >
-                  {copied ? (
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                  ) : (
-                    <Copy className="w-3.5 h-3.5" />
-                  )}
-                </Button>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon-xs"
+                      className={`absolute top-2 right-9 text-muted-foreground hover:text-foreground transition-opacity ${
+                        copied
+                          ? "opacity-100"
+                          : "opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto"
+                      }`}
+                      onClick={handleCopy}
+                      aria-label={copied ? "Copied" : "Copy response"}
+                    >
+                      {copied ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-400" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">{copyTooltipLabel}</TooltipContent>
+                </Tooltip>
               </>
             )}
             <div className={`prose-chat text-sm ${message.content ? "pr-14" : ""}`}>
